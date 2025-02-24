@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ book.title }}</title>
+    <style>
+        .star {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .star.checked {
+            color: gold;
+        }
+        .book-photo {
+            max-width: 200px;
+            height: auto;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const bookRating = {{ book.rating }};
+            setRatingDisplay(bookRating);
+
+            const stars = document.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                star.addEventListener('click', () => {
+                    const rating = index + 1;
+                    submitRating(rating);
+                });
+
+                star.addEventListener('mouseover', () => {
+                    setRatingDisplay(index + 1);
+                });
+
+                star.addEventListener('mouseout', () => {
+                    setRatingDisplay(bookRating);
+                });
+            });
+        });
+
+        function submitRating(rating) {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '{% url "update_rating" book.id %}', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+            xhr.send('rating=' + rating);
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    console.log(response);  // Logging the response
+                    if (response.success) {
+                        bookRating = rating;  // Update the bookRating variable
+                        setRatingDisplay(rating);  // Update the stars immediately
+                    }
+                } else {
+                    console.error('Error submitting rating:', xhr.statusText);
+                }
+            };
+        }
+
+        function setRatingDisplay(rating) {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                star.classList.toggle('checked', index < rating);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>{{ book.title }}</h1>
+    <p>Author: {{ book.author }}</p>
+    {% if book.photo %}
+        <img src="{{ book.photo.url }}" class="book-photo" alt="{{ book.title }}">
+    {% else %}
+        <p>No photo available.</p>
+    {% endif %}
+    <div id="star-container">
+        <span class="star">&#9733;</span>
+        <span class="star">&#9733;</span>
+        <span class="star">&#9733;</span>
+        <span class="star">&#9733;</span>
+        <span class="star">&#9733;</span>
+    </div>
+</body>
+</html>
