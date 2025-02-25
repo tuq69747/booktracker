@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>booktracker</title>
+    <style>
+        .book-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;  /* Space between books */
+        }
+        .book-item {
+            width: 200px;  /* Set a fixed width for each book item */
+            text-align: center;  /* Center the text */
+        }
+        .book-item img {
+            width: 100%;
+            height: auto;  /* Ensure the image fits within the book item */
+        }
+        .rating {
+            direction: rtl;
+            unicode-bidi: bidi-override;
+            display: inline-block;
+        }
+        .rating > input {
+            display: none;
+        }
+        .rating > label {
+            font-size: 1.5em;
+            color: #ddd;
+            cursor: pointer;
+        }
+        .rating > input:checked ~ label,
+        .rating > input:hover ~ label,
+        .rating > label:hover ~ input ~ label {
+            color: #f5b301;
+        }
+    </style>
+</head>
+<body>
+    <h1>booktracker</h1>
+    <div class="book-container">
+        {% for book in books %}
+            <div class="book-item">
+                {% if book.image %}
+                    <img src="{{ book.image.url }}" alt="{{ book.title }}">
+                {% endif %}
+                <h3>{{ book.title }}</h3>
+                <p>by {{ book.author }}</p>
+                <!-- Star rating section -->
+                <div class="rating" data-book-id="{{ book.id }}">
+                    <input type="radio" name="rating-{{ book.id }}" id="star5-{{ book.id }}" value="5"><label for="star5-{{ book.id }}">☆</label>
+                    <input type="radio" name="rating-{{ book.id }}" id="star4-{{ book.id }}" value="4"><label for="star4-{{ book.id }}">☆</label>
+                    <input type="radio" name="rating-{{ book.id }}" id="star3-{{ book.id }}" value="3"><label for="star3-{{ book.id }}">☆</label>
+                    <input type="radio" name="rating-{{ book.id }}" id="star2-{{ book.id }}" value="2"><label for="star2-{{ book.id }}">☆</label>
+                    <input type="radio" name="rating-{{ book.id }}" id="star1-{{ book.id }}" value="1"><label for="star1-{{ book.id }}">☆</label>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ratings = document.querySelectorAll('.rating');
+            ratings.forEach(rating => {
+                rating.addEventListener('change', function() {
+                    const bookId = this.getAttribute('data-book-id');
+                    const selectedRating = this.querySelector('input:checked').value;
+                    fetch(`/books/book/${bookId}/rate/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ rating: selectedRating })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Rating updated!');
+                        } else {
+                            alert('Failed to update rating.');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
